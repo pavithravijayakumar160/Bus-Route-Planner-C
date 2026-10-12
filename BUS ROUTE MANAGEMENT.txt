@@ -1,0 +1,153 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_STOPS 100
+#define MAX_ROUTES 50
+
+typedef struct {
+    char name[50];
+} BusStop;
+
+typedef struct {
+    int stopIDs[MAX_STOPS];
+    int stopCount;
+} BusRoute;
+
+typedef struct {
+    BusStop stops[MAX_STOPS];
+    BusRoute routes[MAX_ROUTES];
+    int stopCount;
+    int routeCount;
+} BusNetwork;
+
+void initNetwork(BusNetwork *network) {
+    network->stopCount = 0;
+    network->routeCount = 0;
+}
+
+void addBusStop(BusNetwork *network, const char *name) {
+    if (network->stopCount < MAX_STOPS) {
+        strcpy(network->stops[network->stopCount].name, name);
+        network->stopCount++;
+    } else {
+        printf("Maximum number of stops reached.\n");
+    }
+}
+
+void addBusRoute(BusNetwork *network, int stopIDs[], int stopCount) {
+    if (network->routeCount < MAX_ROUTES) {
+        BusRoute *route = &network->routes[network->routeCount];
+        route->stopCount = stopCount;
+        for (int i = 0; i < stopCount; i++) {
+            route->stopIDs[i] = stopIDs[i];
+        }
+        network->routeCount++;
+    } else {
+        printf("Maximum number of routes reached.\n");
+    }
+}
+
+void displayRoutes(BusNetwork *network) {
+    for (int i = 0; i < network->routeCount; i++) {
+        printf("Route %d: ", i + 1);
+        for (int j = 0; j < network->routes[i].stopCount; j++) {
+            printf("%s", network->stops[network->routes[i].stopIDs[j]].name);
+            if (j < network->routes[i].stopCount - 1) {
+                printf(" -> ");
+            }
+        }
+        printf("\n");
+    }
+}
+
+void findRoute(BusNetwork *network, const char *start, const char *end) {
+    int startID = -1, endID = -1;
+    for (int i = 0; i < network->stopCount; i++) {
+        if (strcmp(network->stops[i].name, start) == 0) startID = i;
+        if (strcmp(network->stops[i].name, end) == 0) endID = i;
+    }
+    
+    if (startID == -1 || endID == -1) {
+        printf("Stop not found.\n");
+        return;
+    }
+    
+    for (int i = 0; i < network->routeCount; i++) {
+        BusRoute *route = &network->routes[i];
+        int startIdx = -1, endIdx = -1;
+        for (int j = 0; j < route->stopCount; j++) {
+            if (route->stopIDs[j] == startID) startIdx = j;
+            if (route->stopIDs[j] == endID) endIdx = j;
+        }
+        
+        if (startIdx != -1 && endIdx != -1 && startIdx < endIdx) {
+            printf("Route %d: ", i + 1);
+            for (int j = startIdx; j <= endIdx; j++) {
+                printf("%s", network->stops[route->stopIDs[j]].name);
+                if (j < endIdx) {
+                    printf(" -> ");
+                }
+            }
+            printf("\n");
+            return;
+        }
+    }
+    
+    printf("No route found between %s and %s.\n", start, end);
+}
+
+int main() {
+    BusNetwork network;
+    initNetwork(&network);
+    
+    int choice;
+    char name[50];
+    int stopIDs[MAX_STOPS];
+    int stopCount;
+    
+    while (1) {
+        printf("\nBus Route Management System\n");
+        printf("1. Add Bus Stop\n");
+        printf("2. Add Bus Route\n");
+        printf("3. Display All Routes\n");
+        printf("4. Find Route Between Stops\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        
+        switch (choice) {
+            case 1:
+                printf("Enter stop name: ");
+                scanf("%s", name);
+                addBusStop(&network, name);
+                break;
+            case 2:
+                printf("Enter number of stops in route: ");
+                scanf("%d", &stopCount);
+                printf("Enter stop IDs (0 to %d): ", network.stopCount - 1);
+                for (int i = 0; i < stopCount; i++) {
+                    scanf("%d", &stopIDs[i]);
+                }
+                addBusRoute(&network, stopIDs, stopCount);
+                break;
+            case 3:
+                displayRoutes(&network);
+                break;
+            case 4:
+                printf("Enter start stop name: ");
+                scanf("%s", name);
+                char end[50];
+                printf("Enter end stop name: ");
+                scanf("%s", end);
+                findRoute(&network, name, end);
+                break;
+            case 5:
+                exit(0);
+            default:
+                printf("Invalid choice.\n");
+        }
+    }
+    
+    return 0;
+}
